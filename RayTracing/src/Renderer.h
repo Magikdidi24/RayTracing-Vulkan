@@ -13,10 +13,14 @@ public:
 	void OnResize(uint32_t width, uint32_t height);
 	void Render();
 
+	glm::vec3 Color();
+
 	std::shared_ptr<Walnut::Image> GetFinalImage() const { return m_FinalImage; }
 private:
 	glm::vec4 PerPixel(glm::vec2 coord);
 private:
 	std::shared_ptr<Walnut::Image> m_FinalImage;
 	uint32_t* m_ImageData = nullptr;
+private:
+	glm::vec3 m_SphereColor{ 1.0f, 0.0f, 1.0f };
 };

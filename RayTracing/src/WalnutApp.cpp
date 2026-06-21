@@ -19,6 +19,10 @@ public:
 		{
 			Render();
 		}
+		if (ImGui::Button("Color"))
+		{
+			Color();
+		}
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -46,6 +50,10 @@ public:
 		m_Renderer.Render();
 
 		m_LastRenderTime = timer.ElapsedMillis();
+	}
+	void Color()
+	{
+		m_Renderer.Color();
 	}
 private:
 	Renderer m_Renderer;

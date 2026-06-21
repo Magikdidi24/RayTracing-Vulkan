@@ -4,6 +4,7 @@
 
 namespace Utils {
 
+	// Convert hex code color to RGBA format like 0xAABBGGRR to uint32_t
 	static uint32_t ConvertToRGBA(const glm::vec4& color)
 	{
 		uint8_t r = (uint8_t)(color.r * 255.0f);
@@ -19,19 +20,7 @@ namespace Utils {
 
 void Renderer::OnResize(uint32_t width, uint32_t height)
 {
-	if (m_FinalImage)
-	{
-		// No resize necessary
-		if (m_FinalImage->GetWidth() == width && m_FinalImage->GetHeight() == height)
-			return;
-
-		m_FinalImage->Resize(width, height);
-	}
-	else
-	{
-		m_FinalImage = std::make_shared<Walnut::Image>(width, height, Walnut::ImageFormat::RGBA);
-	}
-
+	m_FinalImage = std::make_shared<Walnut::Image>(width, height, Walnut::ImageFormat::RGBA);
 	delete[] m_ImageData;
 	m_ImageData = new uint32_t[width * height];
 }
@@ -54,13 +43,24 @@ void Renderer::Render()
 	m_FinalImage->SetData(m_ImageData);
 }
 
+glm::vec3 Renderer::Color()
+{
+	m_SphereColor = glm::vec3(
+		rand() / (float)RAND_MAX,
+		rand() / (float)RAND_MAX,
+		rand() / (float)RAND_MAX);
+	return m_SphereColor;
+}
+
 glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 {
 	glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
 	glm::vec3 rayDirection(coord.x, coord.y, -1.0f);
 	float radius = 0.5f;
 	// rayDirection = glm::normalize(rayDirection);
-
+	
+	// A ray = a+bt and shpere = x**2+y**2+z**2-r**2=0
+	
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
 	// where
 	// a = ray origin
@@ -82,16 +82,19 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	// Quadratic formula:
 	// (-b +- sqrt(discriminant)) / 2a
 
-	float closestT = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-	float t0 = (-b + glm::sqrt(discriminant)) / (2.0f * a); // Second hit distance (currently unused)
+	float t0 = (-b + sqrt(discriminant)) / (2.0f * a);
+	float t1 = (-b - sqrt(discriminant)) / (2.0f * a);
+	//                     a     +      b       * t
+	glm::vec3 hitray = rayOrigin + rayDirection * t1;
+	glm::vec3 normalize_hitray = glm::normalize(hitray);
 
-	glm::vec3 hitPoint = rayOrigin + rayDirection * closestT;
-	glm::vec3 normal = glm::normalize(hitPoint);
+	glm::vec3 light(-1, -1, -1);
+	light = glm::normalize(light);
 
-	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-	float lightIntensity = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
+	float d = glm::dot(normalize_hitray, -light); // == cos(angle)
+	d=glm::max(d, 0.0f); // clamp to 0 -> 1 Only one side we clamp like if d = -1 we go to 0 so it's a bug if it's more than 1 we don't go to 1 we stay at 1 because it's already normalized
 
-	glm::vec3 sphereColor(1, 0, 1);
-	sphereColor *= lightIntensity;
+	glm::vec3 sphereColor = m_SphereColor;
+	sphereColor *= d; // multiply the color by the light intensity
 	return glm::vec4(sphereColor, 1.0f);
 }
